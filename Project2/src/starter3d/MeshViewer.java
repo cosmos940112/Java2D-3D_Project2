@@ -88,8 +88,8 @@ public class MeshViewer extends JFrame {
 		objRoot.setCapability(BranchGroup.ALLOW_CHILDREN_WRITE);
 		objRoot.setCapability(BranchGroup.ALLOW_DETACH);
 
-//		scene = createSceneGraph("Point-cloud");
-		scene = createSceneGraph("Smooth Shading");
+		scene = createSceneGraph("Point-cloud");
+//		scene = createSceneGraph("Smooth Shading");
 		
 		Transform3D rotZPI = new Transform3D();
 		rotZPI.rotZ(Math.PI);
@@ -105,8 +105,10 @@ public class MeshViewer extends JFrame {
         readObjButton = new JButton("Read");
         readObjButton.addActionListener(new ActionListener() {
             @Override
-            public void actionPerformed(ActionEvent e) {
-            	
+            public void actionPerformed(ActionEvent e) {        		
+        		String selectedObj = (String) objSelector.getSelectedItem();
+        		read_OFF(selectedObj);
+                tg.addChild(scene);
             }
         });
 		
@@ -201,7 +203,7 @@ public class MeshViewer extends JFrame {
 
 		shape.setAppearance(createAppearance());
 		
-		System.out.println(shape.getPickable());
+//		System.out.println(shape.getPickable());
 	
 		// add the geometry to the BranchGroup
 		bg.addChild(shape);
@@ -459,8 +461,8 @@ public class MeshViewer extends JFrame {
 
 			br.close();
 			
-			System.out.println("Read mesh: " + filename);
-			System.out.println("made of " + tmesh.number_vertices + " vertices and " + tmesh.number_faces + " faces.");
+//			System.out.println("Read mesh: " + filename);
+//			System.out.println("made of " + tmesh.number_vertices + " vertices and " + tmesh.number_faces + " faces.");
 
 			return true;
 		} catch (IOException e) {
@@ -556,8 +558,8 @@ public class MeshViewer extends JFrame {
 
 	        br.close();
 
-	        System.out.println("Read mesh: " + filename);
-	        System.out.println("made of " + tmesh.number_vertices + " vertices and " + tmesh.number_faces + " faces.");
+//	        System.out.println("Read mesh: " + filename);
+//	        System.out.println("made of " + tmesh.number_vertices + " vertices and " + tmesh.number_faces + " faces.");
 
 	        return true;
 	    } catch (IOException e) {
@@ -568,7 +570,8 @@ public class MeshViewer extends JFrame {
 	
 	public static void main(String args[]) {
 		JFrame f = new MeshViewer("./test_data/doraemon.off");
-		f.setSize(2400, 1800);
+//		f.setSize(2400, 1800);
+		f.setSize(600, 600);
 		f.setVisible(true);
 		f.setDefaultCloseOperation(EXIT_ON_CLOSE);
 	}

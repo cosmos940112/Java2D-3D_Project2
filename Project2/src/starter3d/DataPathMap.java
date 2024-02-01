@@ -18,7 +18,7 @@ public class DataPathMap {
         OBJs.add("fertility");
         OBJs.add("gargoyle");
         OBJs.add("Lion_vase");
-        OBJs.add("lion2");
+        OBJs.add("lion");
         OBJs.add("Lucy");
         OBJs.add("turtle");
     }
