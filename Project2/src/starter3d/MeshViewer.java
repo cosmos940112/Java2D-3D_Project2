@@ -1,21 +1,42 @@
 package starter3d;
-import java.util.*;
-import java.io.*;
-
-import org.jogamp.java3d.*;
-import org.jogamp.vecmath.*;
-
-import java.awt.*;
-
-import org.jogamp.java3d.utils.geometry.*;
-import org.jogamp.java3d.utils.pickfast.PickCanvas;
-import org.jogamp.java3d.utils.universe.*;
-
+import java.awt.BorderLayout;
+import java.awt.GraphicsConfiguration;
 // for picking
-import java.awt.event.*;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
+import java.io.BufferedReader;
+import java.io.FileReader;
+import java.io.IOException;
+import java.util.Scanner;
 
 import javax.swing.JFrame;
 import javax.swing.SwingUtilities;
+
+import org.jogamp.java3d.Appearance;
+import org.jogamp.java3d.Background;
+import org.jogamp.java3d.BoundingSphere;
+import org.jogamp.java3d.BranchGroup;
+import org.jogamp.java3d.Canvas3D;
+import org.jogamp.java3d.DirectionalLight;
+import org.jogamp.java3d.GeometryArray;
+import org.jogamp.java3d.LineArray;
+import org.jogamp.java3d.Material;
+import org.jogamp.java3d.Node;
+import org.jogamp.java3d.PickInfo;
+import org.jogamp.java3d.PointArray;
+import org.jogamp.java3d.PolygonAttributes;
+import org.jogamp.java3d.Shape3D;
+import org.jogamp.java3d.Transform3D;
+import org.jogamp.java3d.TransformGroup;
+import org.jogamp.java3d.TriangleArray;
+import org.jogamp.java3d.utils.behaviors.vp.OrbitBehavior;
+import org.jogamp.java3d.utils.geometry.Sphere;
+import org.jogamp.java3d.utils.pickfast.PickCanvas;
+import org.jogamp.java3d.utils.universe.SimpleUniverse;
+import org.jogamp.vecmath.Color3f;
+import org.jogamp.vecmath.Point3d;
+import org.jogamp.vecmath.Vector3d;
+import org.jogamp.vecmath.Vector3f;
 
 
 public class MeshViewer extends JFrame {
@@ -52,7 +73,7 @@ public class MeshViewer extends JFrame {
 		objRoot.setCapability(BranchGroup.ALLOW_CHILDREN_WRITE);
 		objRoot.setCapability(BranchGroup.ALLOW_DETACH);
 
-		scene = createSceneGraph();
+		scene = createSceneGraph("smooth shading");
 		
 		Transform3D rotZPI = new Transform3D();
 		rotZPI.rotZ(Math.PI);
@@ -61,6 +82,12 @@ public class MeshViewer extends JFrame {
 		tg.setCapability(TransformGroup.ALLOW_CHILDREN_WRITE);
 		
 		tg.addChild(scene);
+	    
+	    OrbitBehavior orbit = new OrbitBehavior(canvas, OrbitBehavior.REVERSE_ALL);
+	    BoundingSphere bounds = new BoundingSphere(new Point3d(0.0, 0.0, 0.0), 100.0);
+	    orbit.setSchedulingBounds(bounds);
+
+	    u.getViewingPlatform().setViewPlatformBehavior(orbit);
 
 		canvas.addMouseListener(new MouseAdapter() {
 			public void mouseClicked(MouseEvent e) {
@@ -109,17 +136,29 @@ public class MeshViewer extends JFrame {
 	/*
 	 * Create the geometry for the scene
 	 */
-	public BranchGroup createSceneGraph() {
+	public BranchGroup createSceneGraph(String renderType) {
 
 		// create a parent BranchGroup node for the geometry
 		BranchGroup bg = new BranchGroup();
-
+		
 		// create shape - surface
 		Shape3D shape = new Shape3D();
 
-		// Approach 2: with TriangleArray
+		shape.setGeometry(getTriangleArray());
 
-		TriangleArray tarr = new TriangleArray(3 * tmesh.number_faces,
+		shape.setAppearance(createAppearance());
+		
+		System.out.println(shape.getPickable());
+	
+		// add the geometry to the BranchGroup
+		bg.addChild(shape);
+
+		return bg;
+	}
+	
+	public TriangleArray getTriangleArray() {
+		// Approach 2: with TriangleArray
+		TriangleArray triangleArray = new TriangleArray(3 * tmesh.number_faces,
 				GeometryArray.COORDINATES | GeometryArray.NORMALS);
 
 		// Make sure normals are computed before setting them
@@ -138,18 +177,53 @@ public class MeshViewer extends JFrame {
 			}
 		}
 
-		tarr.setCoordinates(0, coords);
-		tarr.setNormals(0, normals);
-		shape.setGeometry(tarr);
-
-		shape.setAppearance(createAppearance());
+		triangleArray.setCoordinates(0, coords);
+		triangleArray.setNormals(0, normals);
 		
-		System.out.println(shape.getPickable());
+		return triangleArray;
+	}
 	
-		// add the geometry to the BranchGroup
-		bg.addChild(shape);
+	public LineArray getWireframeArray() {
+	    // Create LineArray with the same number of vertices
+	    LineArray lineArray = new LineArray(2 * tmesh.number_faces, GeometryArray.COORDINATES);
 
-		return bg;
+	    // Set up the vertices for the wireframe
+	    int n = 2 * tmesh.number_faces;
+	    Point3d[] coords = new Point3d[n];
+	    int index = 0;
+	    for (int i = 0; i < tmesh.number_faces; ++i) {
+	        int v0 = tmesh.face[i][0];
+	        int v1 = tmesh.face[i][1];
+	        int v2 = tmesh.face[i][2];
+
+	        coords[index++] = new Point3d(tmesh.point[v0]);
+	        coords[index++] = new Point3d(tmesh.point[v1]);
+
+	        coords[index++] = new Point3d(tmesh.point[v1]);
+	        coords[index++] = new Point3d(tmesh.point[v2]);
+
+	        coords[index++] = new Point3d(tmesh.point[v2]);
+	        coords[index++] = new Point3d(tmesh.point[v0]);
+	    }
+
+	    lineArray.setCoordinates(0, coords);
+
+	    return lineArray;
+	}
+
+	
+	public PointArray getPointArray() {
+		// create shape - points
+	    PointArray pointArray = new PointArray(tmesh.number_vertices, GeometryArray.COORDINATES);
+
+	    Point3d[] coords = new Point3d[tmesh.number_vertices];
+	    for (int i = 0; i < tmesh.number_vertices; ++i) {
+	        coords[i] = new Point3d(tmesh.point[i]);
+	    }
+
+	    pointArray.setCoordinates(0, coords);
+		
+		return pointArray;
 	}
 
 	private Node pickSurface(int mx, int my) {
@@ -341,6 +415,104 @@ public class MeshViewer extends JFrame {
 			return false;
 		}
 	}
+	
+	public boolean read_OBJ(String filename) {
+	    try {
+	        BufferedReader br = new BufferedReader(new FileReader(filename));
+
+	        String line;
+	        line = br.readLine();
+	        Scanner sc = new Scanner(line);
+
+	        // For now ignore comments '#', TODO later
+
+	        String tmp = sc.next();
+	        if (!tmp.equalsIgnoreCase("v")) {
+	            sc.close();
+	            br.close();
+	            System.out.println("Incorrect OBJ file format");
+	            return false;
+	        }
+	        sc.close();
+
+	        int nv = 0; // Vertex count
+	        int nf = 0; // Face count
+
+	        // Count vertices and faces
+	        while ((line = br.readLine()) != null) {
+	            sc = new Scanner(line);
+	            if (sc.hasNext()) {
+	                tmp = sc.next();
+	                if (tmp.equalsIgnoreCase("v")) {
+	                    nv++;
+	                } else if (tmp.equalsIgnoreCase("f")) {
+	                    nf++;
+	                }
+	            }
+	            sc.close();
+	        }
+
+	        br.close();
+
+	        // Reopen the file for actual reading
+	        br = new BufferedReader(new FileReader(filename));
+
+	        // Skip comments and vertex data to reach face data
+	        while ((line = br.readLine()) != null && !line.trim().startsWith("f")) {}
+
+	        tmesh = new TriangleMesh(nv, nf);
+
+	        for (int i = 0; i < tmesh.number_vertices; i++) {
+	            line = br.readLine();
+	            sc = new Scanner(line);
+
+	            // Skip "v"
+	            sc.next();
+
+	            double dx = sc.nextDouble();
+	            double dy = sc.nextDouble();
+	            double dz = sc.nextDouble();
+
+	            if (sc.hasNext()) {
+	                // TODO later handle color or normal information?
+	            }
+
+	            tmesh.setVertex(i, dx, dy, dz);
+
+	            sc.close();
+	        }
+
+	        for (int i = 0; i < tmesh.number_faces; i++) {
+	            line = br.readLine();
+	            while ((line = br.readLine()) != null && !line.trim().startsWith("f")) {
+	                if (line.trim().isEmpty()) {
+	                    continue;  // Skip empty lines
+	                }
+	                sc = new Scanner(line);
+	                // Skip "f"
+	                sc.next();
+	                
+	                int fi = sc.nextInt();
+	                int fj = sc.nextInt();
+	                int fk = sc.nextInt();
+	                
+	                tmesh.setFace(i, fi - 1, fj - 1, fk - 1); // Subtract 1 to convert to zero-based indexing
+	                sc.close();
+	            }
+	        }
+
+	        br.close();
+
+	        System.out.println("Read mesh: " + filename);
+	        System.out.println("made of " + tmesh.number_vertices + " vertices and " + tmesh.number_faces + " faces.");
+
+	        return true;
+	    } catch (IOException e) {
+	        System.out.println("An exception occurred while reading " + filename);
+	        return false;
+	    }
+	}
+
 
 	public static void main(String args[]) {
 		JFrame f = new MeshViewer("./test_data/doraemon.off");
