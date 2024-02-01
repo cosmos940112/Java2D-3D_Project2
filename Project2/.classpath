@@ -6,5 +6,9 @@
 		</attributes>
 	</classpathentry>
 	<classpathentry kind="src" path="src"/>
+	<classpathentry kind="lib" path="/Users/cosmos/Downloads/java3D/j3dcore.jar"/>
+	<classpathentry kind="lib" path="/Users/cosmos/Downloads/java3D/j3dutils.jar"/>
+	<classpathentry kind="lib" path="/Users/cosmos/Downloads/java3D/jogamp-fat.jar"/>
+	<classpathentry kind="lib" path="/Users/cosmos/Downloads/java3D/vecmath.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>

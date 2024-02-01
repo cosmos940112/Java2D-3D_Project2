@@ -1,7 +1,4 @@
-import javax.imageio.ImageIO;
-import java.io.File;
 import java.awt.Color;
-import java.io.IOException;
 import java.awt.image.BufferedImage;
 
 
@@ -44,7 +41,7 @@ public class Renderer {
         	zBuffer[i] = -999999.0f;
         }
         
-        float invSqrt3 = 1.0f/(float)Math.sqrt(3.0);
+        float invSqrt3 = 1.0f/(float)Math.sqrt(33.0);
         lightDir = new Vec4f(-1.0f*invSqrt3, -1.0f*invSqrt3, -1.0f*invSqrt3, 0.0f);
         invLightDir = new Vec4f(1.0f*invSqrt3, 1.0f*invSqrt3, 1.0f*invSqrt3, 0.0f);
     }
@@ -92,7 +89,7 @@ public class Renderer {
     	return w;
     }
     
-    private void rasterizeTriangle(Vec4f v0, Vec4f v1, Vec4f v2, Vec4f vn0, Vec4f vn1, Vec4f vn2) {
+    private void rasterizeTriangle(Vec4f v0, Vec4f v1, Vec4f v2) {
         // in screen space before perspective divide
         Vec4f vs0 = totalTransform.mul(v0);
         Vec4f vs1 = totalTransform.mul(v1);
@@ -107,11 +104,6 @@ public class Renderer {
         //Vec4f vc0 = modelView.mul(v0);
         //Vec4f vc1 = modelView.mul(v1);
         //Vec4f vc2 = modelView.mul(v2);
-        
-        // transformed normals in camera space
-        Vec4f vnt0 = normalMatrix.mul(vn0);
-        Vec4f vnt1 = normalMatrix.mul(vn1);
-        Vec4f vnt2 = normalMatrix.mul(vn2);
 
         float minxf = Math.min(Math.min(vsd0.x, vsd1.x), vsd2.x);
         float minyf = Math.min(Math.min(vsd0.y, vsd1.y), vsd2.y);
@@ -146,11 +138,12 @@ public class Renderer {
                         
                         // diffuse term
                         // interpolated normal
-                        Vec4f in = new Vec4f(c.x*vnt0.x+c.y*vnt1.x+c.z*vnt2.x, 
-                        		c.x*vnt0.y+c.y*vnt1.y+c.z*vnt2.y,
-                        		c.x*vnt0.z+c.y*vnt1.z+c.z*vnt2.z,
-                        		0.0f);
-                        float nd = in.dot(invLightDir);
+//                        Vec4f in = new Vec4f(c.x*vnt0.x+c.y*vnt1.x+c.z*vnt2.x, 
+//                        		c.x*vnt0.y+c.y*vnt1.y+c.z*vnt2.y,
+//                        		c.x*vnt0.z+c.y*vnt1.z+c.z*vnt2.z,
+//                        		0.0f);
+//                        float nd = in.dot(invLightDir);
+                        float nd = 0.1f;
                         nd = Math.min(Math.max(0.f, nd), 1.0f);
                         float dr = 0.5f * nd, dg = 0.5f * nd, db = 0.5f * nd;
 
@@ -168,7 +161,7 @@ public class Renderer {
         }
     }
 
-    public void draw(Matrix4f mv) {
+    public void drawSmoothShading(Matrix4f mv) {
         modelView = mv;
 
         // Form the matrix transforming vertices into pixels
@@ -186,39 +179,137 @@ public class Renderer {
         	Vec4f v1 = triMesh.getVertex(i, 1);
         	Vec4f v2 = triMesh.getVertex(i, 2);
         	
-        	Vec4f vn0 = triMesh.getVertexNormal(i, 0);
-        	Vec4f vn1 = triMesh.getVertexNormal(i, 1);
-        	Vec4f vn2 = triMesh.getVertexNormal(i, 2);
-        	
-            rasterizeTriangle(v0, v1, v2, vn0, vn1, vn2);
+            rasterizeTriangle(v0, v1, v2);
         }
     }
     
-    public static void main(String[] args) {
-        if (args.length != 1) {
-            System.out.println("Renderer tri_mesh.obj");
-            return;
+    private void rasterizePoint(Vec4f v, Vec4f vn) {
+        // Transform vertex to screen space
+        Vec4f vs = totalTransform.mul(v);
+        
+        // Perspective divide
+        Vec4f vsd = new Vec4f(vs.x / vs.w, vs.y / vs.w, vs.z / vs.w, 1.0f);
+
+        // Compute screen coordinates
+        int x = (int) vsd.x;
+        int y = (int) vsd.y;
+
+        // Check if point is inside the screen
+        if (x >= 0 && x < renderWidth && y >= 0 && y < renderHeight) {
+            // Interpolate depth
+            float z = vsd.z;
+
+            if (z > zBuffer[x + y * renderWidth]) {
+                zBuffer[x + y * renderWidth] = z;
+
+                // Ambient term
+                float ar = 0.2f, ag = 0.2f, ab = 0.2f;
+
+                // Diffuse term
+                float nd = vn.dot(invLightDir);
+                nd = Math.min(Math.max(0.0f, nd), 1.0f);
+                float dr = 0.5f * nd, dg = 0.5f * nd, db = 0.5f * nd;
+
+                // Total contribution
+                float r = ar + dr, g = ag + dg, b = ab + db;
+                r = Math.min(Math.max(0.0f, r), 1.0f);
+                g = Math.min(Math.max(0.0f, g), 1.0f);
+                b = Math.min(Math.max(0.0f, b), 1.0f);
+
+                Color col = new Color(r, g, b);
+                colorBuffer[x + renderWidth * y] = col.getRGB();
+            }
         }
-
-        int width = 800;
-        int height = 800;
-        
-        TriangleMesh t = new TriangleMesh();
-        t.readobj(args[0]);
-        
-        Renderer r = new Renderer(width, height, t);
-
-        Matrix4f mv = new Matrix4f();
-        r.draw(mv);
-
-        // do something with image, e.g. write to file
-        try {
-        	File outFile = new File("./output.png");
-        	BufferedImage img = r.getImage();
-        	ImageIO.write(img, "png", outFile);
-        } catch (IOException e) {
-        	System.out.println("Error: writing result to file");
-        }
-        
     }
+
+    public void drawPoints(Matrix4f mv) {
+        modelView = mv;
+
+        // Form the matrix transforming vertices into pixels
+        totalTransform = new Matrix4f(viewport);
+        totalTransform.mul(projection);
+        totalTransform.mul(modelView);
+
+        // Matrix for transforming the normal
+        normalMatrix = new Matrix4f(modelView);
+        normalMatrix.inverse();
+        normalMatrix.transpose();
+
+        for (int i = 0; i < triMesh.getNumFaces(); i++) {
+            for (int j = 0; j < 3; j++) {
+                Vec4f v = triMesh.getVertex(i, j);
+                Vec4f vn = triMesh.getVertexNormal(i, j);
+                rasterizePoint(v, vn);
+            }
+        }
+    }
+    
+    private void rasterizeGrid(Vec4f v, Vec4f vn) {
+        // Transform vertex to screen space
+        Vec4f vs = totalTransform.mul(v);
+        
+        // Perspective divide
+        Vec4f vsd = new Vec4f(vs.x / vs.w, vs.y / vs.w, vs.z / vs.w, 1.0f);
+
+        // Compute screen coordinates
+        int x = (int) vsd.x;
+        int y = (int) vsd.y;
+
+        // Check if point is inside the screen
+        if (x >= 0 && x < renderWidth && y >= 0 && y < renderHeight) {
+            // Interpolate depth
+            float z = vsd.z;
+
+            if (z > zBuffer[x + y * renderWidth]) {
+                zBuffer[x + y * renderWidth] = z;
+
+                // Ambient term
+                float ar = 0.2f, ag = 0.2f, ab = 0.2f;
+
+                // Diffuse term
+                float nd = vn.dot(invLightDir);
+                nd = Math.min(Math.max(0.0f, nd), 1.0f);
+                float dr = 0.5f * nd, dg = 0.5f * nd, db = 0.5f * nd;
+
+                // Total contribution
+                float r = ar + dr, g = ag + dg, b = ab + db;
+                r = Math.min(Math.max(0.0f, r), 1.0f);
+                g = Math.min(Math.max(0.0f, g), 1.0f);
+                b = Math.min(Math.max(0.0f, b), 1.0f);
+
+                Color col = new Color(r, g, b);
+                colorBuffer[x + renderWidth * y] = col.getRGB();
+            }
+        }
+    }
+
+    public void drawGrid(Matrix4f mv) {
+        modelView = mv;
+
+        // Form the matrix transforming vertices into pixels
+        totalTransform = new Matrix4f(viewport);
+        totalTransform.mul(projection);
+        totalTransform.mul(modelView);
+
+        // Matrix for transforming the normal
+        normalMatrix = new Matrix4f(modelView);
+        normalMatrix.inverse();
+        normalMatrix.transpose();
+
+        for (int i = 0; i < triMesh.getNumFaces(); i++) {
+            for (int j = 0; j < 3; j++) {
+                Vec4f v0 = triMesh.getVertex(i, j);
+                Vec4f vn0 = triMesh.getVertexNormal(i, j);
+
+                int nextIdx = (j + 1) % 3;  // Get the next vertex index
+                Vec4f v1 = triMesh.getVertex(i, nextIdx);
+                Vec4f vn1 = triMesh.getVertexNormal(i, nextIdx);
+
+                // Rasterize the edge between v0 and v1
+                rasterizeGrid(v0, vn0);
+                rasterizeGrid(v1, vn1);
+            }
+        }
+    }
+
 }

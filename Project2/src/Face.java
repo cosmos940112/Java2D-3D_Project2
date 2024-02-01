@@ -23,13 +23,13 @@ public class Face {
         vertexIndices.add(v);
     }
 
-    public void addTextureIndex(int t) {
-        textureIndices.add(t);
-    }
-
-    public void addVertexNormalIndex(int n) {
-        vertexNormalIndices.add(n);
-    }
+//    public void addTextureIndex(int t) {
+//        textureIndices.add(t);
+//    }
+//
+//    public void addVertexNormalIndex(int n) {
+//        vertexNormalIndices.add(n);
+//    }
 
     public int getVIndex(int idx) {
         return vertexIndices.get(idx);

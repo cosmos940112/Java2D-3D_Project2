@@ -10,7 +10,7 @@ public class MainWindow extends JFrame {
 	private int windowWidth;
 	private int windowHeight;
 	private Renderer renderer; 
-	private float dThetaY = 5.0f;
+	private float dThetaY = 3.0f;
 	private float thetaY = 0.0f;
 	
 	public MainWindow(int width, int height, Renderer r) {
@@ -24,13 +24,15 @@ public class MainWindow extends JFrame {
 		renderer.clearBuffers();
 		
         Matrix4f mv = Matrix4f.rotY(thetaY);//new Matrix4f();
-        renderer.draw(mv);
+        renderer.drawSmoothShading(mv);
+//        renderer.drawPoints(mv);
+//        renderer.drawGrid(mv);
 		Image img = renderer.getImage();
 		g.drawImage(img, 0, 0, windowWidth, windowHeight, this);
 		
 		thetaY = thetaY + dThetaY;
 		try {
-			Thread.sleep(33);
+			Thread.sleep(30);
 		} catch (InterruptedException e) {
 			repaint();
 		}
@@ -38,8 +40,8 @@ public class MainWindow extends JFrame {
 	}
 	
 	public static void main(String[] args) {
-		int width = 400;
-		int height = 400;
+		int width = 800;
+		int height = 800;
 		
 		TriangleMesh t = new TriangleMesh();
 		t.readobj("./test_data/diablo3_pose.obj");

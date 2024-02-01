@@ -1,5 +1,4 @@
 import java.io.BufferedReader;
-import java.io.File;
 import java.io.FileReader;
 import java.util.ArrayList;
 
@@ -57,14 +56,9 @@ public class TriangleMesh {
 
                     for (int i = 1; i < numV; i++) {
                         String[] faceTokens = tokens[i].split("/");
-                        int vi = Integer.parseInt(faceTokens[0]);
-                        int ti = Integer.parseInt(faceTokens[1]);
-                        int ni = Integer.parseInt(faceTokens[2]);
                         
-                        // index starts at 1 in .obj
+                    	int vi = Integer.parseInt(faceTokens[0]);
                         f.addVertexIndex(vi-1);
-                        f.addTextureIndex(ti-1);
-                        f.addVertexNormalIndex(ni-1);
                     }
                     faces.add(f);
                 }
