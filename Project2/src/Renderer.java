@@ -89,77 +89,77 @@ public class Renderer {
     	return w;
     }
     
-    private void rasterizeTriangle(Vec4f v0, Vec4f v1, Vec4f v2) {
-        // in screen space before perspective divide
-        Vec4f vs0 = totalTransform.mul(v0);
-        Vec4f vs1 = totalTransform.mul(v1);
-        Vec4f vs2 = totalTransform.mul(v2);
-        
-        // in screen space after perspective divide
-        Vec4f vsd0 = new Vec4f(vs0.x/vs0.w, vs0.y/vs0.w, vs0.z/vs0.w, 1.0f);
-    	Vec4f vsd1 = new Vec4f(vs1.x/vs1.w, vs1.y/vs1.w, vs1.z/vs1.w, 1.0f);
-    	Vec4f vsd2 = new Vec4f(vs2.x/vs2.w, vs2.y/vs2.w, vs2.z/vs2.w, 1.0f);
-
-        // in camera space
-        //Vec4f vc0 = modelView.mul(v0);
-        //Vec4f vc1 = modelView.mul(v1);
-        //Vec4f vc2 = modelView.mul(v2);
-
-        float minxf = Math.min(Math.min(vsd0.x, vsd1.x), vsd2.x);
-        float minyf = Math.min(Math.min(vsd0.y, vsd1.y), vsd2.y);
-        float maxxf = Math.max(Math.max(vsd0.x, vsd1.x), vsd2.x);
-        float maxyf = Math.max(Math.max(vsd0.y, vsd1.y), vsd2.y);
-
-        int minx = (int)minxf;
-        int miny = (int)minyf;
-        int maxx = (int)maxxf;
-        int maxy = (int)maxyf;
-
-        minx = Math.max(0, minx);
-        miny = Math.max(0, miny);
-        maxx = Math.min(renderWidth-1, maxx);
-        maxy = Math.min(renderHeight-1, maxy);
-
-        for (int i = minx; i <= maxx; i++) {
-            for (int j = miny; j <= maxy; j++) {
-                // compute barycentric weights of given point (i, j)
-                Vec4f c = bc(vsd0, vsd1, vsd2, i, j);
-
-                // point is inside the triangle
-                if (c.x>=0.0f && c.y>=0.0f && c.z>=0.0f) {
-                    // interpolate depth
-                    float z = c.x*vs0.z + c.y*vs1.z + c.z*vs2.z;
-
-                    if (z > zBuffer[i+j*renderWidth]) {
-                        zBuffer[i+j*renderWidth] = z;
-                        
-                        // ambient term
-                        float ar = 0.2f, ag = 0.2f, ab = 0.2f;
-                        
-                        // diffuse term
-                        // interpolated normal
-//                        Vec4f in = new Vec4f(c.x*vnt0.x+c.y*vnt1.x+c.z*vnt2.x, 
-//                        		c.x*vnt0.y+c.y*vnt1.y+c.z*vnt2.y,
-//                        		c.x*vnt0.z+c.y*vnt1.z+c.z*vnt2.z,
-//                        		0.0f);
-//                        float nd = in.dot(invLightDir);
-                        float nd = 0.1f;
-                        nd = Math.min(Math.max(0.f, nd), 1.0f);
-                        float dr = 0.5f * nd, dg = 0.5f * nd, db = 0.5f * nd;
-
-                        // total contribution
-                        float r = ar + dr, g = ag + dg, b = ab + db;
-                        r = Math.min(Math.max(0.f, r), 1.0f);
-                        g = Math.min(Math.max(0.f, g), 1.0f);
-                        b = Math.min(Math.max(0.f, b), 1.0f);
-                        
-                        Color col = new Color(r, g, b);
-                        colorBuffer[i+renderWidth*j] = col.getRGB();
-                    }
-                }
-            }
-        }
-    }
+        private void rasterizeTriangle(Vec4f v0, Vec4f v1, Vec4f v2) {
+	        // in screen space before perspective divide
+	        Vec4f vs0 = totalTransform.mul(v0);
+	        Vec4f vs1 = totalTransform.mul(v1);
+	        Vec4f vs2 = totalTransform.mul(v2);
+	        
+	        // in screen space after perspective divide
+	        Vec4f vsd0 = new Vec4f(vs0.x/vs0.w, vs0.y/vs0.w, vs0.z/vs0.w, 1.0f);
+	    	Vec4f vsd1 = new Vec4f(vs1.x/vs1.w, vs1.y/vs1.w, vs1.z/vs1.w, 1.0f);
+	    	Vec4f vsd2 = new Vec4f(vs2.x/vs2.w, vs2.y/vs2.w, vs2.z/vs2.w, 1.0f);
+	
+	        // in camera space
+	        //Vec4f vc0 = modelView.mul(v0);
+	        //Vec4f vc1 = modelView.mul(v1);
+	        //Vec4f vc2 = modelView.mul(v2);
+	
+	        float minxf = Math.min(Math.min(vsd0.x, vsd1.x), vsd2.x);
+	        float minyf = Math.min(Math.min(vsd0.y, vsd1.y), vsd2.y);
+	        float maxxf = Math.max(Math.max(vsd0.x, vsd1.x), vsd2.x);
+	        float maxyf = Math.max(Math.max(vsd0.y, vsd1.y), vsd2.y);
+	
+	        int minx = (int)minxf;
+	        int miny = (int)minyf;
+	        int maxx = (int)maxxf;
+	        int maxy = (int)maxyf;
+	
+	        minx = Math.max(0, minx);
+	        miny = Math.max(0, miny);
+	        maxx = Math.min(renderWidth-1, maxx);
+	        maxy = Math.min(renderHeight-1, maxy);
+	
+	        for (int i = minx; i <= maxx; i++) {
+	            for (int j = miny; j <= maxy; j++) {
+	                // compute barycentric weights of given point (i, j)
+	                Vec4f c = bc(vsd0, vsd1, vsd2, i, j);
+	
+	                // point is inside the triangle
+	                if (c.x>=0.0f && c.y>=0.0f && c.z>=0.0f) {
+	                    // interpolate depth
+	                    float z = c.x*vs0.z + c.y*vs1.z + c.z*vs2.z;
+	
+	                    if (z > zBuffer[i+j*renderWidth]) {
+	                        zBuffer[i+j*renderWidth] = z;
+	                        
+	                        // ambient term
+	                        float ar = 0.2f, ag = 0.2f, ab = 0.2f;
+	                        
+	                        // diffuse term
+	                        // interpolated normal
+	//                        Vec4f in = new Vec4f(c.x*vnt0.x+c.y*vnt1.x+c.z*vnt2.x, 
+	//                        		c.x*vnt0.y+c.y*vnt1.y+c.z*vnt2.y,
+	//                        		c.x*vnt0.z+c.y*vnt1.z+c.z*vnt2.z,
+	//                        		0.0f);
+	//                        float nd = in.dot(invLightDir);
+	                        float nd = 0.5f;
+	                        nd = Math.min(Math.max(0.f, nd), 1.0f);
+	                        float dr = 0.5f * nd, dg = 0.5f * nd, db = 0.5f * nd;
+	
+	                        // total contribution
+	                        float r = ar + dr, g = ag + dg, b = ab + db;
+	                        r = Math.min(Math.max(0.f, r), 1.0f);
+	                        g = Math.min(Math.max(0.f, g), 1.0f);
+	                        b = Math.min(Math.max(0.f, b), 1.0f);
+	                        
+	                        Color col = new Color(r, g, b);
+	                        colorBuffer[i+renderWidth*j] = col.getRGB();
+	                    }
+	                }
+	            }
+	        }
+	    }
 
     public void drawSmoothShading(Matrix4f mv) {
         modelView = mv;

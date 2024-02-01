@@ -192,7 +192,7 @@ public class MeshViewer extends JFrame {
 		if ("Point-cloud".equals(renderType)) {
 			shape.setGeometry(getPointArray());
         } else if ("Wireframe".equals(renderType)) {
-			shape.setGeometry(getPointArray());
+			shape.setGeometry(getWireframeArray());
         } else if ("Filled with visible edges".equals(renderType)) {
 			shape.setGeometry(getPointArray());
         } else if ("Flat Shading".equals(renderType)) {
