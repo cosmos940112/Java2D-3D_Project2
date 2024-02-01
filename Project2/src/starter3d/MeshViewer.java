@@ -1,15 +1,23 @@
 package starter3d;
 import java.awt.BorderLayout;
 import java.awt.GraphicsConfiguration;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 // for picking
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Scanner;
 
+import javax.swing.JButton;
+import javax.swing.JComboBox;
 import javax.swing.JFrame;
+import javax.swing.JPanel;
+import javax.swing.JSeparator;
 import javax.swing.SwingUtilities;
 
 import org.jogamp.java3d.Appearance;
@@ -43,10 +51,17 @@ public class MeshViewer extends JFrame {
 	private static final long serialVersionUID = 1L;
 
 	TriangleMesh tmesh;
+	DataPathMap dataPathMap;
 
 	Canvas3D canvas;
 	BranchGroup scene;
 	BranchGroup objRoot;
+	
+	JComboBox<String> shapeSelector;
+    JButton renderButton;
+    
+    JComboBox<String> objSelector;
+    JButton readObjButton;
 
 	private Point3d picked = new Point3d();
 	//private Vector3d view = new Vector3d();
@@ -73,7 +88,8 @@ public class MeshViewer extends JFrame {
 		objRoot.setCapability(BranchGroup.ALLOW_CHILDREN_WRITE);
 		objRoot.setCapability(BranchGroup.ALLOW_DETACH);
 
-		scene = createSceneGraph("smooth shading");
+//		scene = createSceneGraph("Point-cloud");
+		scene = createSceneGraph("Smooth Shading");
 		
 		Transform3D rotZPI = new Transform3D();
 		rotZPI.rotZ(Math.PI);
@@ -82,6 +98,46 @@ public class MeshViewer extends JFrame {
 		tg.setCapability(TransformGroup.ALLOW_CHILDREN_WRITE);
 		
 		tg.addChild(scene);
+		
+		//select .obj
+        objSelector = new JComboBox<>(DataPathMap.getOBJs().toArray(new String[0]));
+        
+        readObjButton = new JButton("Read");
+        readObjButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+            	
+            }
+        });
+		
+        //select render type
+        List<String> shapes = new ArrayList<>();
+        shapes.add("Point-cloud");
+        shapes.add("Wireframe");
+        shapes.add("Filled with visible edges");
+        shapes.add("Flat Shading");
+        shapes.add("Smooth Shading");
+        shapeSelector = new JComboBox<>(shapes.toArray(new String[0]));
+
+        renderButton = new JButton("Render");
+        renderButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+//            	tg.removeAllChildren();
+                String selectedShape = (String) shapeSelector.getSelectedItem();
+                scene = createSceneGraph(selectedShape);
+                tg.addChild(scene);
+            }
+        });
+
+        JPanel controlPanel = new JPanel();
+        controlPanel.add(objSelector);
+        controlPanel.add(readObjButton);
+        controlPanel.add(new JSeparator());
+        controlPanel.add(shapeSelector);
+        controlPanel.add(renderButton);
+
+        add("North", controlPanel);
 	    
 	    OrbitBehavior orbit = new OrbitBehavior(canvas, OrbitBehavior.REVERSE_ALL);
 	    BoundingSphere bounds = new BoundingSphere(new Point3d(0.0, 0.0, 0.0), 100.0);
@@ -99,6 +155,7 @@ public class MeshViewer extends JFrame {
 					System.out.println("Intersection");
 					System.out.println(picked);
 
+					//after tg.addChild, red ball appear
 					tg.addChild(createSphere(picked, 0.05f));
 				}
 			}
@@ -108,25 +165,11 @@ public class MeshViewer extends JFrame {
 
 		u.getViewingPlatform().setNominalViewingTransform();
 
-		// For big (dimensionwise) mesh, set the back clip plane
-		// further away. A better approach is simply to normalize
-		// the input mesh (see above)
-		// u.getViewer().getView().setBackClipDistance(100.0);
-
-		// Orbit behavior
-		/*
-		 * OrbitBehavior ob = new OrbitBehavior(c, OrbitBehavior.REVERSE_ALL);
-		 * BoundingSphere bs = new BoundingSphere(new Point3d(0.0, 0.0, 0.0), 100.0);
-		 * ob.setSchedulingBounds(bs);
-		 * 
-		 * u.getViewingPlatform().setViewPlatformBehavior(ob);
-		 */
-
 		// add a light to the root BranchGroup to illuminate the scene
 		addLights(objRoot);
 
 		// Set up the background
-		Background bgNode = new Background(0.7f, 0.7f, 0.6f);
+		Background bgNode = new Background(0.2f, 0.2f, 0.2f);
 		bgNode.setApplicationBounds(getBoundingSphere());
 		objRoot.addChild(bgNode);
 
@@ -143,8 +186,18 @@ public class MeshViewer extends JFrame {
 		
 		// create shape - surface
 		Shape3D shape = new Shape3D();
-
-		shape.setGeometry(getTriangleArray());
+		
+		if ("Point-cloud".equals(renderType)) {
+			shape.setGeometry(getPointArray());
+        } else if ("Wireframe".equals(renderType)) {
+			shape.setGeometry(getPointArray());
+        } else if ("Filled with visible edges".equals(renderType)) {
+			shape.setGeometry(getPointArray());
+        } else if ("Flat Shading".equals(renderType)) {
+			shape.setGeometry(getPointArray());
+        } else if ("Smooth Shading".equals(renderType)) {
+			shape.setGeometry(getTriangleArray());
+        }
 
 		shape.setAppearance(createAppearance());
 		
@@ -152,7 +205,7 @@ public class MeshViewer extends JFrame {
 	
 		// add the geometry to the BranchGroup
 		bg.addChild(shape);
-
+		
 		return bg;
 	}
 	
@@ -512,11 +565,10 @@ public class MeshViewer extends JFrame {
 	        return false;
 	    }
 	}
-
-
+	
 	public static void main(String args[]) {
 		JFrame f = new MeshViewer("./test_data/doraemon.off");
-		f.setSize(600, 600);
+		f.setSize(2400, 1800);
 		f.setVisible(true);
 		f.setDefaultCloseOperation(EXIT_ON_CLOSE);
 	}
