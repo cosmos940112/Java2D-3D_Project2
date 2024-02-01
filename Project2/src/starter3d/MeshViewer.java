@@ -67,7 +67,7 @@ public class MeshViewer extends JFrame {
 	//private Vector3d view = new Vector3d();
 
 	MeshViewer(String filename) {
-		read_OFF(filename);
+		read_OBJ(filename);
 		// Fit the triangle mesh in a bounding box with
 		// unit diagonal length.
 		tmesh.centerMesh();
@@ -513,7 +513,7 @@ public class MeshViewer extends JFrame {
 	        br = new BufferedReader(new FileReader(filename));
 
 	        // Skip comments and vertex data to reach face data
-	        while ((line = br.readLine()) != null && !line.trim().startsWith("f")) {}
+	        while ((line = br.readLine()) != null && !line.trim().startsWith("v")) {}
 
 	        tmesh = new TriangleMesh(nv, nf);
 
@@ -535,28 +535,32 @@ public class MeshViewer extends JFrame {
 	            tmesh.setVertex(i, dx, dy, dz);
 
 	            sc.close();
+	            
+	            if (i == 3754) {
+					System.out.println("===============");
+				}
 	        }
+	        
+//	        while ((line = br.readLine()) != null && !line.trim().startsWith("f")) {}
+			line = br.readLine();
+			line = br.readLine();
+	        
+			for (int i = 0; i < tmesh.number_faces; i++) {
+				line = br.readLine();
+				sc = new Scanner(line);
+				
+				// Skip "f"
+				sc.next();
 
-	        for (int i = 0; i < tmesh.number_faces; i++) {
-	            line = br.readLine();
-	            while ((line = br.readLine()) != null && !line.trim().startsWith("f")) {
-	                if (line.trim().isEmpty()) {
-	                    continue;  // Skip empty lines
-	                }
-	                sc = new Scanner(line);
-	                // Skip "f"
-	                sc.next();
-	                
-	                int fi = sc.nextInt();
-	                int fj = sc.nextInt();
-	                int fk = sc.nextInt();
-	                
-	                tmesh.setFace(i, fi - 1, fj - 1, fk - 1); // Subtract 1 to convert to zero-based indexing
-	                sc.close();
-	            }
-	        }
+				int fi = sc.nextInt();
+				int fj = sc.nextInt();
+				int fk = sc.nextInt();
 
-	        br.close();
+				tmesh.setFace(i, fi - 1, fj - 1, fk - 1); // Subtract 1 to convert to zero-based indexing
+				sc.close();
+			}
+
+			br.close();
 
 //	        System.out.println("Read mesh: " + filename);
 //	        System.out.println("made of " + tmesh.number_vertices + " vertices and " + tmesh.number_faces + " faces.");
@@ -569,7 +573,7 @@ public class MeshViewer extends JFrame {
 	}
 	
 	public static void main(String args[]) {
-		JFrame f = new MeshViewer("./test_data/doraemon.off");
+		JFrame f = new MeshViewer("./test_data/armadillo.obj");
 //		f.setSize(2400, 1800);
 		f.setSize(600, 600);
 		f.setVisible(true);
