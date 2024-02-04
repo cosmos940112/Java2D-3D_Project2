@@ -6,12 +6,10 @@ import java.util.Scanner;
 
 
 public class OBJReader {
-	TriangleMesh tmesh;
-
 	/*
 	 * Read OFF files quick and dirty. For now, limited to triangle meshes.
 	 */
-	public boolean read_OFF(String filename) {
+	public TriangleMesh read_OFF(String filename) {
 		try {
 			BufferedReader br = new BufferedReader(new FileReader(filename));
 
@@ -26,7 +24,6 @@ public class OBJReader {
 				sc.close();
 				br.close();
 				System.out.println("Incorrect OFF file format");
-				return false;
 			}
 			sc.close();
 
@@ -37,7 +34,7 @@ public class OBJReader {
 			sc.nextInt(); // can be zero so ignore it
 			sc.close();
 
-			tmesh = new TriangleMesh(nv, nf);
+	        TriangleMesh tmesh = new TriangleMesh(nv, nf);
 
 			double dx, dy, dz;
 
@@ -77,14 +74,14 @@ public class OBJReader {
 //			System.out.println("Read mesh: " + filename);
 //			System.out.println("made of " + tmesh.number_vertices + " vertices and " + tmesh.number_faces + " faces.");
 
-			return true;
+			return tmesh;
 		} catch (IOException e) {
 			System.out.println("An exception occurred while reading " + filename);
-			return false;
+			return null;
 		}
 	}
 	
-	public boolean read_OBJ(String filename) {
+	public TriangleMesh read_OBJ(String filename) {
 	    try {
 	        BufferedReader br = new BufferedReader(new FileReader(filename));
 
@@ -99,9 +96,11 @@ public class OBJReader {
 	            sc.close();
 	            br.close();
 	            System.out.println("Incorrect OBJ file format");
-	            return false;
 	        }
 	        sc.close();
+	        
+	        // Reopen the file for actual reading
+	        br = new BufferedReader(new FileReader(filename));
 
 	        int nv = 0; // Vertex count
 	        int nf = 0; // Face count
@@ -125,10 +124,7 @@ public class OBJReader {
 	        // Reopen the file for actual reading
 	        br = new BufferedReader(new FileReader(filename));
 
-	        // Skip comments and vertex data to reach face data
-	        while ((line = br.readLine()) != null && !line.trim().startsWith("f")) {}
-
-	        tmesh = new TriangleMesh(nv, nf);
+	        TriangleMesh tmesh = new TriangleMesh(nv, nf);
 
 	        for (int i = 0; i < tmesh.number_vertices; i++) {
 	            line = br.readLine();
@@ -149,35 +145,35 @@ public class OBJReader {
 
 	            sc.close();
 	        }
+	        
+//	        while ((line = br.readLine()) != null && !line.trim().startsWith("f")) {}
+			line = br.readLine();
+			line = br.readLine();
+	        
+			for (int i = 0; i < tmesh.number_faces; i++) {
+				line = br.readLine();
+				sc = new Scanner(line);
+				
+				// Skip "f"
+				sc.next();
 
-	        for (int i = 0; i < tmesh.number_faces; i++) {
-	            line = br.readLine();
-	            while ((line = br.readLine()) != null && !line.trim().startsWith("f")) {
-	                if (line.trim().isEmpty()) {
-	                    continue;  // Skip empty lines
-	                }
-	                sc = new Scanner(line);
-	                // Skip "f"
-	                sc.next();
-	                
-	                int fi = sc.nextInt();
-	                int fj = sc.nextInt();
-	                int fk = sc.nextInt();
-	                
-	                tmesh.setFace(i, fi - 1, fj - 1, fk - 1); // Subtract 1 to convert to zero-based indexing
-	                sc.close();
-	            }
-	        }
+				int fi = sc.nextInt();
+				int fj = sc.nextInt();
+				int fk = sc.nextInt();
 
-	        br.close();
+				tmesh.setFace(i, fi - 1, fj - 1, fk - 1); // Subtract 1 to convert to zero-based indexing
+				sc.close();
+			}
+
+			br.close();
 
 //	        System.out.println("Read mesh: " + filename);
 //	        System.out.println("made of " + tmesh.number_vertices + " vertices and " + tmesh.number_faces + " faces.");
 
-	        return true;
+	        return tmesh;
 	    } catch (IOException e) {
 	        System.out.println("An exception occurred while reading " + filename);
-	        return false;
+	        return null;
 	    }
 	}
 }
