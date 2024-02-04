@@ -68,10 +68,7 @@ public class TriangleMesh {
 		Point3d lower_corner = new Point3d();
 		Point3d upper_corner = new Point3d();
 		computeBBox(lower_corner, upper_corner);
-//		System.out.println(lower_corner);
-//		System.out.println(upper_corner);
 		double len = lower_corner.distance(upper_corner);
-//		System.out.println(len);
 		return len;
 	}
 

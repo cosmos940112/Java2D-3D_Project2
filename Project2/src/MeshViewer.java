@@ -90,7 +90,8 @@ public class MeshViewer extends JFrame {
 		tg.addChild(scene);
 		
 		//select .obj
-        objSelector = new JComboBox<>(DataPathMap.getOBJs().toArray(new String[0]));
+		dataPathMap = new DataPathMap();
+        objSelector = new JComboBox<>(dataPathMap.getOBJs().toArray(new String[0]));
         
         readObjButton = new JButton("Read");
         readObjButton.addActionListener(new ActionListener() {
@@ -98,8 +99,7 @@ public class MeshViewer extends JFrame {
             public void actionPerformed(ActionEvent e) {
                 tg.removeAllChildren();
                 String selectedObj = (String) objSelector.getSelectedItem();
-                String filename = "./test_data/" + selectedObj + ".obj";
-                tmesh = reader.read_OBJ(filename);
+                tmesh = reader.read_OBJ(dataPathMap.getDataPathMap().get(selectedObj));
                 tmesh.centerMesh();
                 tmesh.normalizeMesh();
                 scene = createSceneGraph("Smooth Shading");
@@ -280,7 +280,7 @@ public class MeshViewer extends JFrame {
         } else if ("Flat Shading".equals(renderType)) {
     	    polyAttrib.setPolygonMode(PolygonAttributes.POLYGON_FILL);
         } else if ("Smooth Shading".equals(renderType)) {
-//    	    polyAttrib.setPolygonMode(PolygonAttributes.POLYGON_FILL);
+    	    polyAttrib.setPolygonMode(PolygonAttributes.POLYGON_FILL);
         }
 		
 		app.setPolygonAttributes(polyAttrib);

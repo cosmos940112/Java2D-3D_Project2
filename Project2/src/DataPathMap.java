@@ -30,12 +30,12 @@ public class DataPathMap {
 		}
     }
 
-	public static Map<String, String> getDataPathMap() {
+	public Map<String, String> getDataPathMap() {
 		setMap();
 		return DataPathMap;
 	}
 
-	public static List<String> getOBJs() {
+	public List<String> getOBJs() {
 		setOBJs();
 		return OBJs;
 	}
