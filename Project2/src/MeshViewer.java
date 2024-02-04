@@ -120,8 +120,10 @@ public class MeshViewer extends JFrame {
         renderButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-            	tg.removeAllChildren();
-                String selectedShape = (String) shapeSelector.getSelectedItem();
+            	String selectedShape = (String) shapeSelector.getSelectedItem();
+            	if (!"Filled with visible edges".equals(selectedShape)) {
+            		tg.removeAllChildren();
+                }
                 scene = createSceneGraph(selectedShape);
                 tg.addChild(scene);
             }
@@ -169,11 +171,10 @@ public class MeshViewer extends JFrame {
 		// create shape - surface
 		Shape3D shape = new Shape3D();
 		
-//		if ("Filled with visible edges".equals(renderType)) {
-//			shape.setGeometry(getWireframeArray());
-////			bg.addChild(shape);
-//        }
 		shape.setGeometry(getTriangleArray());
+		if ("Filled with visible edges".equals(renderType)) {
+			shape.setGeometry(getWireframeArray());
+        }
 		shape.setAppearance(createAppearance(renderType));
 		
 		// add the geometry to the BranchGroup
